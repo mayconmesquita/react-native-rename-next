@@ -4,6 +4,7 @@
 - Add support for App's Name using '&amp' and other special entities;
 - Change App's Name and Bundle Identifier in iOS more files (eg.: project.pbxproj, .xcscheme file);
 - Add Windows compatibility;
+- Able to change only bundle ID without requiring name change
 
 Fork from: https://github.com/junedomingo/react-native-rename
 
@@ -39,11 +40,15 @@ git checkout -b rename-app
 react-native-rename-next <newName>
 ```
 
-> With custom Bundle Identifier (Android only. For iOS, please use Xcode)
+> With custom Bundle Identifier
 ```
 react-native-rename-next <newName> -b <bundleIdentifier>
 ```
 
+> Change only Bundle Identifier
+```
+react-native-rename-next <existingName> -b <bundleIdentifier> --bundle-only
+```
 ## Example
 ```
 react-native-rename-next "My App"
@@ -52,5 +57,8 @@ react-native-rename-next "My App"
 ```
 react-native-rename-next "My App" -b io.github.mayconmesquita.myapp
 ```
-
+> Changing only Bundle Identifier
+```
+react-native-rename-next "My App" -b io.github.mayconmesquita.myapp.new --bundle-only
+```
 <a href="https://www.buymeacoffee.com/mayconmesquita"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;"  target="_blank"></a>

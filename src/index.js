@@ -81,6 +81,7 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
       .version('2.5.3')
       .arguments('<newName>')
       .option('-b, --bundleID [value]', 'Set custom bundle identifier eg. "com.junedomingo.travelapp"')
+      .option('-B, --bundle-only', 'Do not require name change (newName must match existing)')
       .action(newName => {
         const nS_NewName = newName.replace(/\s/g, '');
         const pattern = /^([\p{Letter}\p{Number}])+([\p{Letter}\p{Number}\s]+)$/u;
@@ -112,8 +113,17 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
           );
         }
 
-        if (newName === currentAppName || newName === nS_CurrentAppName || newName === lC_Ns_CurrentAppName) {
-          return console.log('Please try a different name.');
+        if (program.bundleOnly) {
+          if (!program.bundleID) {
+            return console.log('bundle ID required when using --bundle-only');
+          }
+          if (newName !== currentAppName) {
+            return console.log('App name must match when using --bundle-only');
+          }
+        } else {
+          if (newName === currentAppName || newName === nS_CurrentAppName || newName === lC_Ns_CurrentAppName) {
+            return console.log('Please try a different name.');
+          }
         }
 
         // Move files and folders from ./config/foldersAndFiles.js
@@ -127,16 +137,21 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
               itemsProcessed += index;
 
               if (fs.existsSync(path.join(__dirname, element)) || !fs.existsSync(path.join(__dirname, element))) {
-                const move = shell.exec(`git mv "${path.join(__dirname, element)}" "${path.join(__dirname, dest)}"`);
+                if (element === dest && program.bundleOnly) {
+                  // if bundle-only, this is not really a surprise.
+                  // console.log(`/${dest} ${colors.yellow('RENAME SKIPPED')}`);
+                } else {
+                  const move = shell.exec(`git mv "${path.join(__dirname, element)}" "${path.join(__dirname, dest)}"`);
 
-                if (move.code === 0) {
-                  console.log(successMsg);
-                } else if (move.code === 128) {
-                  // if "outside repository" error occured
-                  if (shell.mv('-f', path.join(__dirname, element), path.join(__dirname, dest)).code === 0) {
+                  if (move.code === 0) {
                     console.log(successMsg);
-                  } else {
-                    console.log("Ignore above error if this file doesn't exist");
+                  } else if (move.code === 128) {
+                    // if "outside repository" error occured
+                    if (shell.mv('-f', path.join(__dirname, element), path.join(__dirname, dest)).code === 0) {
+                      console.log(successMsg);
+                    } else {
+                      console.log("Ignore above error if this file doesn't exist");
+                    }
                   }
                 }
               }
