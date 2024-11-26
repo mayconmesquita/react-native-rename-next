@@ -13,11 +13,12 @@ export const slugify = (str = '') =>
     .replace(/[Ææ]+/g, 'ae') // Special Characters #10
     .replace(/[Øøœ]+/g, 'oe') // Special Characters #11
     .replace(/[%]+/g, 'pct') // Special Characters #12
-    .replace(/\s+/g, '-') // Replace spaces with -
+    .replace(/\s+/g, '_') // Replace spaces with _
+    .replace(/\-+/g, '_') // Replace spaces with _
     .replace(/[^\w\-]+/g, '') // Remove all non-word chars
-    .replace(/\-\-+/g, '-') // Replace multiple - with single -
-    .replace(/^-+/, '') // Trim - from start of text
-    .replace(/-+$/, ''); // Trim - from end of text
+    .replace(/\_\_+/g, '_') // Replace multiple _ with single _
+    .replace(/^_+/, '') // Trim - from start of text
+    .replace(/_+$/, ''); // Trim - from end of text
 
 export const extractCurrentBundleID = data => {
   try {

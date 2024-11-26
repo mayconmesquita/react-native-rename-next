@@ -16,7 +16,9 @@ import { foldersAndFiles } from './config/foldersAndFiles';
 import { filesToModifyContent } from './config/filesToModifyContent';
 import { bundleIdentifiers } from './config/bundleIdentifiers';
 import { extractCurrentBundleID, slugify } from './config/utils';
+import 'regenerator-runtime/runtime';
 
+const isWin = process.platform === 'win32';
 const devTestRNProject = ''; // For Development eg '/Users/junedomingo/Desktop/RN49'
 const __dirname = devTestRNProject || process.cwd();
 const projectName = pjson.name;
@@ -52,7 +54,7 @@ const deletePreviousBundleDirectory = ({ oldBundleNameDir, shouldDelete }) => {
     const dir = oldBundleNameDir.replace(/\./g, '/');
     const deleteDirectory = shell.rm('-rf', dir);
     Promise.resolve(deleteDirectory);
-    console.log('Done removing previous bundle directory.'.green);
+    console.log('Done removing previous bundle directory.');
   } else {
     Promise.resolve();
     console.log('Bundle directory was not changed. Keeping...'.yellow);
@@ -67,7 +69,7 @@ const cleanBuilds = () => {
     path.join(__dirname, 'android/build/*'),
   ]);
   Promise.resolve(deleteDirectories);
-  console.log('Done removing builds.'.green);
+  console.log('Done removing builds.');
 };
 
 readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
@@ -196,8 +198,24 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
               // Create new bundle folder if doesn't exist yet
               if (!fs.existsSync(fullNewBundlePath)) {
                 shell.mkdir('-p', fullNewBundlePath);
-                const move = shell.exec(`git mv "${fullCurrentBundlePath}/"* "${fullNewBundlePath}"`);
+
                 const successMsg = `${newBundlePath} ${colors.green('BUNDLE INDENTIFIER CHANGED')}`;
+                let move;
+
+                if (isWin) {
+                  const files = shell.ls(`${fullCurrentBundlePath}`);
+                  files.forEach(file => {
+                    if (move && move.code !== 0) {
+                      return;
+                    }
+
+                    const from = `${fullCurrentBundlePath}/${file}`;
+                    const to = `${fullNewBundlePath}/${file}`;
+                    move = shell.exec(`git mv "${from}" "${to}"`);
+                  });
+                } else {
+                  move = shell.exec(`git mv "${fullCurrentBundlePath}/"* "${fullNewBundlePath}"`);
+                }
 
                 if (move.code === 0) {
                   console.log(successMsg);
@@ -224,43 +242,46 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
           });
 
         const resolveBundleIdentifiers = params =>
-          new Promise(resolve => {
-            let filePathsCount = 0;
+          new Promise(async resolve => {
             const { currentBundleID, newBundleID, newBundlePath, javaFileBase, currentJavaPath, newJavaPath } = params;
 
-            bundleIdentifiers(currentAppName, newName, projectName, currentBundleID, newBundleID, newBundlePath).map(
-              file => {
-                filePathsCount += file.paths.length - 1;
-                let itemsProcessed = 0;
-
-                file.paths.map((filePath, index) => {
-                  const newPaths = [];
-                  if (fs.existsSync(path.join(__dirname, filePath))) {
-                    newPaths.push(path.join(__dirname, filePath));
-
-                    setTimeout(() => {
-                      itemsProcessed += index;
-                      replaceContent(file.regex, file.replacement, newPaths);
-                      if (itemsProcessed === filePathsCount) {
-                        const oldBundleNameDir = path.join(__dirname, javaFileBase, currentBundleID);
-                        resolve({ oldBundleNameDir, shouldDelete: currentJavaPath !== newJavaPath });
-                      }
-                    }, 200 * index);
-                  }
-                });
-              }
+            const bundleIdentifiersFiles = bundleIdentifiers(
+              currentAppName,
+              newName,
+              projectName,
+              currentBundleID,
+              newBundleID,
+              newBundlePath
             );
+
+            for (const file of bundleIdentifiersFiles) {
+              for (const filePath of file.paths) {
+                const newPaths = [];
+
+                if (fs.existsSync(path.join(__dirname, filePath))) {
+                  newPaths.push(path.join(__dirname, filePath));
+
+                  await new Promise(res => setTimeout(res, 100));
+
+                  replaceContent(file.regex, file.replacement, newPaths);
+                }
+              }
+            }
+
+            const resolvePromise = () => {
+              const oldBundleNameDir = path.join(__dirname, javaFileBase, currentBundleID);
+              resolve({ oldBundleNameDir, shouldDelete: currentJavaPath !== newJavaPath });
+            };
 
             // * Next section finds all java files and replace package name
             // ! Maybe not the best approach
             // TODO: Find another solution
             const newAndroidPath = path.join(__dirname, newBundlePath);
-            fs.readdir(newAndroidPath, function(err, files) {
-              //handling error
-              if (err) {
-                return console.log('Unable to scan directory: ' + err);
-              }
+
+            try {
+              const files = fs.readdirSync(newAndroidPath);
               const filePaths = files.map(file => `${newAndroidPath}/${file}`);
+
               replace({
                 regex: currentBundleID,
                 replacement: newBundleID,
@@ -271,7 +292,15 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
               for (const filePath of filePaths) {
                 console.log(`${filePath.replace(__dirname, '')} ${colors.green('MODIFIED PATH')}`);
               }
-            });
+            } catch (err) {
+              console.log('Unable to scan directory: ' + err);
+
+              return resolvePromise();
+            }
+
+            await new Promise(res => setTimeout(res, 100));
+
+            return resolvePromise();
             // * End of section for replacing package name in all java files
           });
 
@@ -282,7 +311,7 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
             .then(resolveBundleIdentifiers)
             .then(deletePreviousBundleDirectory)
             .then(cleanBuilds)
-            .then(() => console.log(`APP SUCCESSFULLY RENAMED TO "${newName}"! 🎉 🎉 🎉`.green))
+            .then(() => console.log(`\nApp successfully renamed to "${newName}"!`.green))
             .then(() => {
               if (fs.existsSync(path.join(__dirname, 'ios', 'Podfile'))) {
                 console.log(
@@ -293,10 +322,11 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
             .then(() =>
               console.log(
                 `${colors.yellow(
-                  'Please make sure to run "watchman watch-del-all" and "npm start --reset-cache" before running the app. '
+                  'Please make sure to run "watchman watch-del-all" and "npm start --reset-cache" before running the app.\n'
                 )}`
               )
-            );
+            )
+            .catch(err => console.log(err));
         };
 
         rename();
