@@ -15,6 +15,7 @@ import replaceLast from 'replace-last';
 import { foldersAndFiles } from './config/foldersAndFiles';
 import { filesToModifyContent } from './config/filesToModifyContent';
 import { bundleIdentifiers } from './config/bundleIdentifiers';
+import { extractCurrentBundleID, slugify } from './config/utils';
 
 const devTestRNProject = ''; // For Development eg '/Users/junedomingo/Desktop/RN49'
 const __dirname = devTestRNProject || process.cwd();
@@ -24,9 +25,9 @@ const replaceOptions = {
   silent: true,
 };
 
-function readFile(filePath) {
+function readFile(filePath, encode = '') {
   return new Promise((resolve, reject) => {
-    fs.readFile(filePath, (err, data) => {
+    fs.readFile(filePath, encode || '', (err, data) => {
       if (err) reject(err);
       resolve(data);
     });
@@ -42,7 +43,7 @@ function replaceContent(regex, replacement, paths) {
   });
 
   for (const filePath of paths) {
-    console.log(`${filePath.replace(__dirname, '')} ${colors.green('MODIFIED')}`);
+    console.log(`${filePath.replace(__dirname, '')} ${colors.green('MODIFIED CONTENT')}`);
   }
 }
 
@@ -82,7 +83,7 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
       .arguments('<newName>')
       .option('-b, --bundleID [value]', 'Set custom bundle identifier eg. "com.junedomingo.travelapp"')
       .action(newName => {
-        const nS_NewName = newName.replace(/\s/g, '');
+        const nS_NewName = slugify(newName).replace(/\s/g, '');
         const pattern = /^([\p{Letter}\p{Number}])+([\p{Letter}\p{Number}\s]+)$/u;
         const lC_Ns_NewAppName = nS_NewName.toLowerCase();
         const bundleID = program.bundleID ? program.bundleID.toLowerCase() : null;
@@ -126,7 +127,7 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
             setTimeout(() => {
               itemsProcessed += index;
 
-              if (fs.existsSync(path.join(__dirname, element)) || !fs.existsSync(path.join(__dirname, element))) {
+              if (fs.existsSync(path.join(__dirname, element))) {
                 const move = shell.exec(`git mv "${path.join(__dirname, element)}" "${path.join(__dirname, dest)}"`);
 
                 if (move.code === 0) {
@@ -175,9 +176,8 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
 
         const resolveJavaFiles = () =>
           new Promise(resolve => {
-            readFile(path.join(__dirname, 'android/app/src/main/AndroidManifest.xml')).then(data => {
-              const $ = cheerio.load(data);
-              const currentBundleID = $('manifest').attr('package');
+            readFile(path.join(__dirname, 'android/app/build.gradle'), 'utf-8').then(data => {
+              const currentBundleID = extractCurrentBundleID(data);
               const newBundleID = program.bundleID ? bundleID : `com.${lC_Ns_NewAppName}`;
               const javaFileBase = '/android/app/src/main/java';
               const newJavaPath = `${javaFileBase}/${newBundleID.replace(/\./g, '/')}`;
@@ -269,7 +269,7 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
               });
 
               for (const filePath of filePaths) {
-                console.log(`${filePath.replace(__dirname, '')} ${colors.green('MODIFIED')}`);
+                console.log(`${filePath.replace(__dirname, '')} ${colors.green('MODIFIED PATH')}`);
               }
             });
             // * End of section for replacing package name in all java files

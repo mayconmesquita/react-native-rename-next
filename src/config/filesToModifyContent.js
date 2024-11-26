@@ -1,9 +1,11 @@
 // nS - No Space
 // lC - Lowercase
 
+import { slugify } from './utils';
+
 export function filesToModifyContent(currentAppName, newName) {
   const nS_CurrentAppName = currentAppName.replace(/\s/g, '');
-  const nS_NewName = newName.replace(/\s/g, '');
+  const nS_NewName = slugify(newName).replace(/\s/g, '');
 
   return [
     {
@@ -62,9 +64,24 @@ export function filesToModifyContent(currentAppName, newName) {
       paths: [`ios/${nS_NewName}/Info.plist`],
     },
     {
+      regex: currentAppName,
+      replacement: newName,
+      paths: [`ios/InfoPlist.xcstrings`],
+    },
+    // {
+    //   regex: currentAppName, // wip
+    //   replacement: newName, // wip
+    //   paths: [`ios/${nS_NewName}.xcodeproj/project.pbxproj`],
+    // },
+    {
       regex: `"name": "${nS_CurrentAppName}"`,
       replacement: `"name": "${nS_NewName}"`,
       paths: ['package.json'],
+    },
+    {
+      regex: `${nS_CurrentAppName}@workspace`,
+      replacement: `${nS_NewName}@workspace`,
+      paths: ['yarn.lock'],
     },
     {
       regex: `"displayName": "${currentAppName}"`,

@@ -1,9 +1,11 @@
 // nS - No Space
 // lC - Lowercase
 
+import { slugify } from './utils';
+
 export function foldersAndFiles(currentAppName, newName) {
   const nS_CurrentAppName = currentAppName.replace(/\s/g, '');
-  const nS_NewName = newName.replace(/\s/g, '');
+  const nS_NewName = slugify(newName).replace(/\s/g, '');
 
   return [
     `ios/${nS_CurrentAppName}`,
