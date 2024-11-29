@@ -4,7 +4,7 @@
 import { slugify } from './utils';
 
 export function bundleIdentifiers(currentAppName, newName, projectName, currentBundleID, newBundleID, newBundlePath) {
-  const nS_CurrentAppName = currentAppName.replace(/\s/g, '');
+  const nS_CurrentAppName = slugify(currentAppName).replace(/\s/g, '');
   const nS_NewName = slugify(newName).replace(/\s/g, '');
   const lC_Ns_CurrentBundleID = currentBundleID.toLowerCase();
   const lC_Ns_NewBundleID = newBundleID.toLowerCase();

@@ -4,7 +4,7 @@
 import { slugify } from './utils';
 
 export function filesToModifyContent(currentAppName, newName) {
-  const nS_CurrentAppName = currentAppName.replace(/\s/g, '');
+  const nS_CurrentAppName = slugify(currentAppName).replace(/\s/g, '');
   const nS_NewName = slugify(newName).replace(/\s/g, '');
 
   return [
@@ -66,13 +66,13 @@ export function filesToModifyContent(currentAppName, newName) {
     {
       regex: currentAppName,
       replacement: newName,
+      paths: [`ios/${nS_NewName}Tests/Info.plist`],
+    },
+    {
+      regex: currentAppName,
+      replacement: newName,
       paths: [`ios/InfoPlist.xcstrings`],
     },
-    // {
-    //   regex: currentAppName, // wip
-    //   replacement: newName, // wip
-    //   paths: [`ios/${nS_NewName}.xcodeproj/project.pbxproj`],
-    // },
     {
       regex: `"name": "${nS_CurrentAppName}"`,
       replacement: `"name": "${nS_NewName}"`,

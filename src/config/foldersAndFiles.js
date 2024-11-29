@@ -4,7 +4,7 @@
 import { slugify } from './utils';
 
 export function foldersAndFiles(currentAppName, newName) {
-  const nS_CurrentAppName = currentAppName.replace(/\s/g, '');
+  const nS_CurrentAppName = slugify(currentAppName).replace(/\s/g, '');
   const nS_NewName = slugify(newName).replace(/\s/g, '');
 
   return [
