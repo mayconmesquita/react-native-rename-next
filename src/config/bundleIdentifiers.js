@@ -8,6 +8,10 @@ export function bundleIdentifiers(currentAppName, newName, projectName, currentB
   const nS_NewName = slugify(newName).replace(/\s/g, '');
   const lC_Ns_CurrentBundleID = currentBundleID.toLowerCase();
   const lC_Ns_NewBundleID = newBundleID.toLowerCase();
+  const lC_Ns_NewBundleIDPrefix = lC_Ns_NewBundleID
+    .split('.')
+    .slice(0, -1)
+    .join('.');
 
   return [
     {
@@ -59,6 +63,18 @@ export function bundleIdentifiers(currentAppName, newName, projectName, currentB
       regex: currentBundleID,
       replacement: newBundleID,
       paths: ['ios/' + nS_NewName + '.xcodeproj/project.pbxproj'],
+    },
+    {
+      // Change default Bundle ID prefix in iOS (project.pbxproj)
+      regex: `com.facebook.REACT.${nS_CurrentAppName}`,
+      replacement: newBundleID,
+      paths: ['ios/' + nS_NewName + '.xcodeproj/project.pbxproj', `ios/${nS_NewName}/Info.plist`],
+    },
+    {
+      // Change default tvOS related Bundle ID prefix in iOS (project.pbxproj)
+      regex: /org\.reactjs\.native\.example\.\$\(PRODUCT_NAME:rfc1034identifier\)/g,
+      replacement: `${lC_Ns_NewBundleIDPrefix}.$(PRODUCT_NAME:rfc1034identifier)`,
+      paths: ['ios/' + nS_NewName + '.xcodeproj/project.pbxproj', `ios/${nS_NewName}-tvOSTests/Info.plist`],
     },
   ];
 }
