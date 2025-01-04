@@ -20,7 +20,7 @@ export function filesToModifyContent(currentAppName, newName) {
       // also contains the app name and prevents it from being inappropriately
       // replaced by an update to the app name with the same bundle ID
       regex: new RegExp(`(?!\\.)(.|^)${nS_CurrentAppName}`, 'g'),
-      replacement: nS_NewName,
+      replacement: `$1${nS_NewName}`,
       paths: [
         'index.js',
         'index.android.js',
