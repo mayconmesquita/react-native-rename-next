@@ -15,7 +15,11 @@ export function filesToModifyContent(currentAppName, newName) {
     },
     {
       // replacement without using space ('MyApp' => 'NewApp')
-      regex: nS_CurrentAppName,
+      // App name (probably) doesn't start with `.`, but the bundle ID will
+      // include the `.`. This fixes a possible issue where the bundle ID
+      // also contains the app name and prevents it from being inappropriately
+      // replaced by an update to the app name with the same bundle ID
+      regex: new RegExp(`(?!\\.)(.|^)${nS_CurrentAppName}`, 'g'),
       replacement: nS_NewName,
       paths: [
         'index.js',
