@@ -30,6 +30,7 @@ export function filesToModifyContent(currentAppName, newName) {
         `ios/${nS_NewName}.xcodeproj/xcshareddata/xcschemes/${nS_NewName}-tvOS.xcscheme`,
         `ios/${nS_NewName}.xcodeproj/xcshareddata/xcschemes/${nS_NewName}.xcscheme`,
         `ios/${nS_NewName}/AppDelegate.m`,
+        `ios/${nS_NewName}/AppDelegate.swift`,
         'android/settings.gradle',
         `ios/${nS_NewName}Tests/${nS_NewName}Tests.m`,
         'ios/build/info.plist',
