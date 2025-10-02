@@ -84,25 +84,44 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
       .version('2.6.5')
       .arguments('<newName>')
       .option('-b, --bundleID [value]', 'Set custom bundle identifier eg. "com.junedomingo.travelapp"')
+      .option('--iosBundleID [value]', 'Set custom bundle identifier specifically for ios')
+      .option('--androidBundleID [value]', 'Set custom bundle identifier specifically for android')
       .action(newName => {
         const nS_NewName = slugify(newName).replace(/\s/g, '');
         const pattern = /^([\p{Letter}\p{Number}])+([\p{Letter}\p{Number}\s]+)$/u;
         const lC_Ns_NewAppName = nS_NewName.toLowerCase();
         const bundleID = program.bundleID ? program.bundleID.toLowerCase() : null;
+        const iosBundleID = program.iosBundleID ? program.iosBundleID.toLowerCase() : bundleID;
+        const androidBundleID = program.androidBundleID ? program.androidBundleID.toLowerCase() : bundleID;
         let newBundlePath;
         const listOfFoldersAndFiles = foldersAndFiles(currentAppName, newName);
         const listOfFilesToModifyContent = filesToModifyContent(currentAppName, newName, projectName);
 
-        if (bundleID) {
-          newBundlePath = bundleID.replace(/\./g, '/');
-          const id = bundleID.split('.');
+        if (androidBundleID) {
+          newBundlePath = androidBundleID.replace(/\./g, '/');
+          const id = androidBundleID.split('.');
           const validBundleID = /^([a-zA-Z]([a-zA-Z0-9_])*\.)+[a-zA-Z]([a-zA-Z0-9_])*$/u;
           if (id.length < 2) {
             return console.log(
               'Invalid Bundle Identifier. Add something like "com.travelapp" or "com.junedomingo.travelapp"'
             );
           }
-          if (!validBundleID.test(bundleID)) {
+          if (!validBundleID.test(androidBundleID)) {
+            return console.log(
+              'Invalid Bundle Identifier. It must have at least two segments (one or more dots). Each segment must start with a letter. All characters must be alphanumeric or an underscore [a-zA-Z0-9_]'
+            );
+          }
+        }
+
+        if (iosBundleID) {
+          const id = iosBundleID.split('.');
+          const validBundleID = /^([a-zA-Z]([a-zA-Z0-9_])*\.)+[a-zA-Z]([a-zA-Z0-9_])*$/u;
+          if (id.length < 2) {
+            return console.log(
+              'Invalid Bundle Identifier. Add something like "com.travelapp" or "com.junedomingo.travelapp"'
+            );
+          }
+          if (!validBundleID.test(iosBundleID)) {
             return console.log(
               'Invalid Bundle Identifier. It must have at least two segments (one or more dots). Each segment must start with a letter. All characters must be alphanumeric or an underscore [a-zA-Z0-9_]'
             );
@@ -180,12 +199,12 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
           new Promise(resolve => {
             readFile(path.join(__dirname, 'android/app/build.gradle'), 'utf-8').then(data => {
               const currentBundleID = extractCurrentBundleID(data);
-              const newBundleID = program.bundleID ? bundleID : `com.${lC_Ns_NewAppName}`;
+              const newBundleID = androidBundleID || `com.${lC_Ns_NewAppName}`;
               const javaFileBase = '/android/app/src/main/java';
               const newJavaPath = `${javaFileBase}/${newBundleID.replace(/\./g, '/')}`;
               const currentJavaPath = `${javaFileBase}/${currentBundleID.replace(/\./g, '/')}`;
 
-              if (bundleID) {
+              if (androidBundleID) {
                 newBundlePath = newJavaPath;
               } else {
                 newBundlePath = newBundleID.replace(/\./g, '/').toLowerCase();
@@ -251,7 +270,8 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
               projectName,
               currentBundleID,
               newBundleID,
-              newBundlePath
+              newBundlePath,
+              iosBundleID
             );
 
             for (const file of bundleIdentifiersFiles) {
