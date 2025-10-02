@@ -81,7 +81,7 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
     const lC_Ns_CurrentAppName = nS_CurrentAppName.toLowerCase();
 
     program
-      .version('2.6.5')
+      .version('2.6.8')
       .arguments('<newName>')
       .option('-b, --bundleID [value]', 'Set custom bundle identifier eg. "com.junedomingo.travelapp"')
       .option('--iosBundleID [value]', 'Set custom bundle identifier specifically for ios')
