@@ -18,8 +18,8 @@ export function bundleIdentifiers(
   const lC_Ns_NewBundleID = newBundleID.toLowerCase();
   const finalIOSBundleID = iosBundleID || newBundleID;
 
-  // androidTest files stay at their original path (not moved by resolveJavaFiles)
-  const currentAndroidTestBundlePath = `android/app/src/androidTest/java/${currentBundleID.replace(/\./g, '/')}`;
+  // androidTest files are moved to the new bundle path by resolveJavaFiles before this runs
+  const newAndroidTestBundlePath = `android/app/src/androidTest/java/${newBundleID.replace(/\./g, '/')}`;
 
   return [
     {
@@ -73,11 +73,10 @@ export function bundleIdentifiers(
       paths: ['ios/' + nS_NewName + '.xcodeproj/project.pbxproj'],
     },
     {
-      // Update package declaration in DetoxTest.java (androidTest source set is never
-      // moved by resolveJavaFiles, so we patch it in-place using the current bundle path)
+      // Update package declaration in DetoxTest.java after it has been moved to the new bundle path
       regex: currentBundleID,
       replacement: newBundleID,
-      paths: [`${currentAndroidTestBundlePath}/DetoxTest.java`],
+      paths: [`${newAndroidTestBundlePath}/DetoxTest.java`],
     },
   ];
 }

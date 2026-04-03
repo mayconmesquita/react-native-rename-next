@@ -201,8 +201,8 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
               const currentBundleID = extractCurrentBundleID(data);
               const newBundleID = androidBundleID || `com.${lC_Ns_NewAppName}`;
               const javaFileBase = '/android/app/src/main/java';
-              const newJavaPath = `${javaFileBase}/${newBundleID.replace(/\./g, '/')}`;
-              const currentJavaPath = `${javaFileBase}/${currentBundleID.replace(/\./g, '/')}`;
+              const newJavaPath = `${javaFileBase}/${newBundleID.replace(/\./g, '/')}`; // replacing . with / for path (ex: com.junedomingo.app -> com/junedomingo/app)
+              const currentJavaPath = `${javaFileBase}/${currentBundleID.replace(/\./g, '/')}`; // replacing . with / for path (ex: com.junedomingo.app -> com/junedomingo/app)
 
               if (androidBundleID) {
                 newBundlePath = newJavaPath;
@@ -246,6 +246,44 @@ readFile(path.join(__dirname, 'android/app/src/main/res/values/strings.xml'))
                     console.log(`Error moving: "${currentJavaPath}" "${newBundlePath}"`);
                   }
                 }
+              }
+
+              // Move androidTest java files (e.g. DetoxTest.java) to the new bundle path
+              const androidTestFileBase = '/android/app/src/androidTest/java';
+              const currentAndroidTestPath = path.join(
+                __dirname,
+                `${androidTestFileBase}/${currentBundleID.replace(/\./g, '/')}`
+              );
+              const newAndroidTestPath = path.join(
+                __dirname,
+                `${androidTestFileBase}/${newBundleID.replace(/\./g, '/')}`
+              );
+
+              if (currentAndroidTestPath !== newAndroidTestPath && fs.existsSync(currentAndroidTestPath)) {
+                shell.mkdir('-p', newAndroidTestPath);
+
+                let androidTestMove;
+                if (isWin) {
+                  const files = shell.ls(currentAndroidTestPath);
+                  files.forEach(file => {
+                    if (androidTestMove && androidTestMove.code !== 0) return;
+                    androidTestMove = shell.exec(
+                      `git mv "${currentAndroidTestPath}/${file}" "${newAndroidTestPath}/${file}"`
+                    );
+                  });
+                } else {
+                  androidTestMove = shell.exec(`git mv "${currentAndroidTestPath}/"* "${newAndroidTestPath}"`);
+                }
+
+                if (androidTestMove && androidTestMove.code !== 0 && androidTestMove.code !== 128) {
+                  shell.mv('-f', currentAndroidTestPath + '/*', newAndroidTestPath);
+                }
+
+                console.log(
+                  `${androidTestFileBase}/${newBundleID.replace(/\./g, '/')} ${colors.green(
+                    'BUNDLE IDENTIFIER CHANGED'
+                  )}`
+                );
               }
 
               const vars = {
